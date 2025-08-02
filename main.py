@@ -1,6 +1,12 @@
 import os
+from dotenv import load_dotenv
 from modules import PhoneBook
 from validations import phone_validator, email_validator, name_validator
+from utils.email_utils import Send_message
+
+load_dotenv()
+SENDER_EMAIL = os.getenv("GMAIL_USER")
+APP_PASSWORD = os.getenv("GMAIL_PASS")
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -42,9 +48,10 @@ def main():
         print("4. Delete a contact")
         print("5. Search for a contact")
         print("6. Sort contacts")
-        print("7. Exit")
+        print("7. delete all contacts")
+        print("8. Exit")
 
-        choice = input("Enter your choice (1-7): ").strip()
+        choice = input("Enter your choice (1-8): ").strip()
 
         match choice:
             case "1": 
@@ -60,6 +67,8 @@ def main():
                 email = input_validated("Enter email: ", email_validator, "Invalid email address!")
                 try:
                     pb.add_contact(first_name, last_name, phone, email)
+                    send_welcome_meg = Send_message(email, f"{first_name} {last_name}", SENDER_EMAIL, APP_PASSWORD)
+                    send_welcome_meg.send()
                 except Exception as e:
                     print(f" {e}")
                 input("\nPress Enter to continue...")
@@ -74,7 +83,7 @@ def main():
                     print("No firstname or lastname provided.")
                     input("\nPress Enter to continue...")
                     continue
-                
+
                 elif full_name not in pb.contacts:
                     print(f"❌ {full_name} not found!")
                     input("\nPress Enter to continue...")
@@ -85,6 +94,8 @@ def main():
 
                 try:
                     pb.edit_contact(first_name, last_name, new_phone, new_email)
+                    send_edit_meg = Send_message(new_email, f"{first_name} {last_name}", SENDER_EMAIL, APP_PASSWORD)
+                    send_edit_meg.send(body=f"You've edited {first_name} {last_name} contact")
                 except Exception as e:
                     print(f"{e}")
                 input("\nPress Enter to continue...")
@@ -113,6 +124,10 @@ def main():
                 input("\nPress Enter to continue...")
 
             case "7":
+                pb.delete_all_contacts()
+                input("\nPress Enter to continue...")
+
+            case "8":
                 print("👋 Exiting. Goodbye!")
                 break
 

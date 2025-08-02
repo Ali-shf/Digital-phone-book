@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from validations import phone_validator, email_validator
-
+from utils.email_utils import Send_message
 
 class Contact:
     def __init__(self, first_name, last_name, phone_number, email, created_at=None, updated_at=None):
@@ -19,17 +19,25 @@ class Contact:
     
 
     def update_contact(self, phone_number=None, email=None):
-        if phone_number is not None:
+        updated = False
+        if phone_number is not None and phone_number != self.phone_number:
             if not phone_validator(phone_number):
                 raise ValueError("Invalid phone number.")
             self.phone_number = phone_number
+            updated = True
 
-        if email is not None:
+        if email is not None and email != self.email:
             if not email_validator(email):
                 raise ValueError("Invalid email address.")
             self.email = email
+            updated = True
         
-        self.updated_at = datetime.now().isoformat()
+
+        if updated: 
+            self.update_at = datetime.now().isoformat()
+        
+
+        return updated
 
     
 
@@ -79,14 +87,19 @@ class PhoneBook:
         
 
         try:
-            contact.update_contact(phone_number=new_phone, email=new_email)
+            updated = contact.update_contact(phone_number=new_phone, email=new_email)
         except ValueError as e:
             print(f"❌ {e}")
             return False
-        
-        self.save()
-        print(f"✅ Contact '{full_name}' updated.")
-        return True
+
+        if updated:
+            self.save()
+            print(f"✅ Contact '{full_name}' updated.")
+        else:
+            print(f"⚠️ No changes made to '{full_name}'.")
+
+        return updated
+
     
 
     def delete_contact(self, first_name, last_name):
@@ -99,6 +112,15 @@ class PhoneBook:
         raise ValueError(f"❌ {full_name} not found!")
         
     
+    def delete_all_contacts(self):
+        if len(self.contacts) == 0:
+            print("There is nothing to delete!")
+        else:
+            self.contacts.clear()
+            self.save()
+            print("Contacts get empty")
+
+
     def get_all_contacts(self):
         if not self.contacts:
             yield "📭 Phone book is empty."
@@ -124,6 +146,7 @@ class PhoneBook:
         self.contacts = dict(sorted(self.contacts.items(), key=lambda item: item[0].lower()))
         self.save()
         print("✅ Contact has been sorted")
+
 
     def save(self):
         data = {name: contact.to_dict() for name, contact in self.contacts.items()}
